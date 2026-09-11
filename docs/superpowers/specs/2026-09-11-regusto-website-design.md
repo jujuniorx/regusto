@@ -34,10 +34,19 @@ Fonte oficial usada como identificador principal, conforme instrução do client
 - Listagem do iFood existe mas bloqueou acesso automatizado (HTTP 403) — itens/preços específicos não puderam ser extraídos por pesquisa
 
 ### 2.3 Decisões tomadas a partir da pesquisa
-- **Horário exibido no site = o oficial** (08:00–14:20, seg-sáb), não a variação encontrada em agregadores de terceiros (11:00–15:00), por instrução direta do cliente de priorizar a fonte oficial.
+- **Horário exibido no site = o oficial** (08:00–14:20, seg-sáb) — ver regra completa e status "a confirmar" em §2.4.
 - **Marca no site = "Regusto"** (curto, como no domínio e no handle do Instagram), com "Comida caseira de qualidade" (frase real já usada pela própria marca no Instagram) como tagline — em vez de inventar uma nova frase ou adotar o nome mais longo de listagens de terceiros.
 - **CTA de pedido usa o número de WhatsApp já em produção** (`5511998731881`), não o telefone fixo institucional — telefone fixo não opera WhatsApp; o número móvel é o que a Regusto já usa hoje para receber pedidos reais via Pedizap.
 - **"Reserva" (do briefing original) é reinterpretada como "fazer pedido/encomendar"** (marmitex/grelhados para retirada ou entrega via WhatsApp), não como reserva de mesa — o formato self-service por quilo não opera com reserva de mesa tradicional.
+
+### 2.4 Regra permanente: divergência de horário de funcionamento
+
+Existe uma divergência real entre o horário do site oficial (08:00–14:20, seg-sáb) e o horário mostrado por agregadores externos (ex: 11:00–15:00). Essa divergência **não é resolvida por esta pesquisa** e não deve ser resolvida por invenção. Regra explícita do cliente para o projeto:
+
+1. O horário do **site oficial é a informação principal** usada em todo o site, enquanto a divergência não for esclarecida.
+2. Essa informação é marcada como **"a confirmar"** — deve ser revisada com o cliente antes do lançamento/publicação final, não é definitiva.
+3. Dados de agregadores **nunca substituem automaticamente** o horário oficial, nem agora nem em atualização futura de conteúdo.
+4. O horário vive em **um único local editável** da aplicação (ver §6) — nenhum componente deve ter o horário hardcoded separadamente, exatamente para que essa confirmação futura (ou qualquer correção) seja uma edição em um lugar só.
 
 ## 3. Decisão de arquitetura técnica
 
@@ -78,6 +87,18 @@ Uma rota dedicada `/cardapio` fica fora do escopo do MVP, mas a estrutura de con
 Conteúdo vive em arquivos TypeScript tipados dentro do repositório (ex: `content/site.ts`, `content/menu.ts`), não em banco de dados nem CMS. Cada campo de conteúdo real ainda não recebido é marcado explicitamente como placeholder (não silenciosamente inventado como se fosse real), para ser trocado depois sem mudança de schema.
 
 **Decisão importante:** o prato do dia (rotativo, visto no Instagram) **não** é modelado como conteúdo do site — replicar isso exigiria redeploy quase diário, incompatível com o modelo de manutenção "desenvolvedor edita código" escolhido pelo cliente (Approach A). O site exibe as categorias estáveis do cardápio oficial e direciona explicitamente para WhatsApp/Instagram para o prato do dia. Isso é uma decisão de honestidade sobre a natureza do negócio, não uma limitação escondida.
+
+**Horário de funcionamento — fonte única (ver regra em §2.4):** o horário não é repetido como texto solto em cada componente que o exibe (hero, rodapé, seção de informações práticas, dados estruturados de SEO). Vive como um único valor exportado em `content/site.ts`, algo como:
+
+```ts
+export const businessHours = {
+  display: "Segunda a sábado: 08:00–14:20 · Domingo: fechado",
+  source: "site oficial (regusto.com.br)",
+  confirmedForLaunch: false, // divergência com agregadores externos (~11:00–15:00) — confirmar com o cliente antes de publicar
+};
+```
+
+Todo componente que mostra horário importa `businessHours.display` — nunca reescreve o texto. Corrigir o horário (ou marcar `confirmedForLaunch: true` após confirmação do cliente) é uma edição nesse único arquivo, sem tocar em componentes.
 
 ### Pendências reais de conteúdo (bloqueiam apenas o polimento final, não a estrutura)
 - Itens específicos do cardápio com preços (categorias confirmadas; itens/preços não — listagem do iFood bloqueou acesso automatizado)

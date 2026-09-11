@@ -1,0 +1,217 @@
+{
+  "meta": {
+    "name": "Regusto — Identidade Digital",
+    "description": "Perfil de design autoral para o site institucional da Regusto (self-service por kg, marmitex e grelhados, Bauru/SP). Derivado de pesquisa de marca real e julgamento profissional de direção de arte — não de medição de imagem, pois nenhuma foto de referência foi fornecida nesta fase.",
+    "source_references": [
+      "https://regusto.com.br",
+      "https://regusto.com.br/site/contato",
+      "https://www.instagram.com/regustorestaurante/",
+      "Pesquisa pública: Tripadvisor, Solutudo, Social Bauru, Guia Bauru Pocket, iFood (listagem, acesso automatizado bloqueado)",
+      "Briefing direto do cliente (2026-09-11)"
+    ],
+    "created_at": "2026-09-11"
+  },
+  "design_system": {
+    "color": {
+      "palette_type": "analogous",
+      "primary": { "hex": "#A8432B", "role": "Cor de marca principal — CTAs primários e acentos de destaque; remete a terracota/tempero tostado" },
+      "secondary": { "hex": "#2F3B2E", "role": "Contraste institucional — fundos escuros e seções de destaque; remete a ervas/verde-mata" },
+      "accent": { "hex": "#E8A33D", "role": "Destaque pontual e hover states — remete a azeite/tempero dourado, uso moderado" },
+      "neutral": {
+        "scale": ["#FBF6EE", "#F1E7D8", "#DDD0BC", "#A99C88", "#6B6154", "#3A342C", "#1E1A16"],
+        "usage": "Do claro ao escuro: FBF6EE é o fundo cru quente base; F1E7D8/DDD0BC para superfícies elevadas e divisores; A99C88 para texto terciário/desabilitado; 6B6154 para texto secundário; 3A342C e 1E1A16 (quase-preto quente, nunca #000) para texto principal e fundos escuros invertidos"
+      },
+      "semantic": { "success": "#4C7A4E", "warning": "#C68A2E", "error": "#B23B2E", "info": "#3D6B8C" },
+      "surface": { "background": "#FBF6EE", "card": "#FFFDF8", "elevated": "#F1E7D8" },
+      "contrast_strategy": "Dark-on-light dominante (texto quase-preto quente sobre creme), com inversão pontual (creme sobre verde-oliva #2F3B2E) em seções institucionais de destaque como 'Sobre' ou rodapé"
+    },
+    "typography": {
+      "type_scale": {
+        "display": { "size": "clamp(2.75rem, 6vw, 5.5rem)", "weight": 500, "line_height": 1.02, "tracking": "-0.01em" },
+        "heading_1": { "size": "clamp(2rem, 4vw, 3.25rem)", "weight": 500, "line_height": 1.08, "tracking": "-0.005em" },
+        "heading_2": { "size": "clamp(1.5rem, 2.6vw, 2.25rem)", "weight": 500, "line_height": 1.15, "tracking": "0em" },
+        "heading_3": { "size": "1.375rem", "weight": 600, "line_height": 1.25, "tracking": "0em" },
+        "body": { "size": "1.0625rem", "weight": 400, "line_height": 1.6, "tracking": "0em" },
+        "body_small": { "size": "0.9375rem", "weight": 400, "line_height": 1.55, "tracking": "0em" },
+        "caption": { "size": "0.8125rem", "weight": 500, "line_height": 1.4, "tracking": "0.01em" },
+        "overline": { "size": "0.75rem", "weight": 600, "line_height": 1.2, "tracking": "0.12em" }
+      },
+      "font_families": {
+        "heading": "Fraunces (variable, wght 400-600, opsz alto no display)",
+        "body": "Work Sans",
+        "mono": "JetBrains Mono (reservada — sem uso ativo na UI do MVP)"
+      },
+      "font_style_notes": "Serifada editorial quente (Fraunces) para display/headings e nomes de prato — traz autoria e afeto; sans humanista (Work Sans) para corpo, UI e preços com tabular-nums para alinhamento no cardápio; ambas variable fonts via next/font para performance"
+    },
+    "spacing": {
+      "base_unit": "4px",
+      "scale": "4, 8, 12, 16, 24, 32, 48, 64, 96, 128",
+      "content_density": "comfortable",
+      "section_rhythm": "Seções institucionais (hero, sobre, ambiente) com respiro generoso de 96–128px entre si; seção de cardápio mais densa/ritmada (32–48px) para permitir leitura rápida de várias opções"
+    },
+    "layout": {
+      "grid_system": "12 colunas em desktop, container centralizado",
+      "max_content_width": "1200px (1440px em seções full-bleed de fotografia)",
+      "columns": "12 desktop / 4 mobile",
+      "gutter": "24px desktop / 16px mobile",
+      "breakpoints": "480 / 768 / 1024 / 1440",
+      "alignment_tendency": "mixed — grid estrito em cardápio e informações práticas; composição assimétrica em seções editoriais (hero, sobre, galeria)"
+    },
+    "shape": {
+      "border_radius": { "small": "4px", "medium": "10px", "large": "20px", "pill": "999px" },
+      "border_usage": "subtle 1px — principalmente em divisores de cardápio e cards de informação; botões primários sem borda (preenchidos)",
+      "divider_style": "Linha fina (1px, neutral.scale[2]) entre itens de cardápio, com leve textura pontilhada opcional remetendo a um caderno de receitas"
+    },
+    "elevation": {
+      "shadow_style": "soft diffused",
+      "levels": { "low": "0 1px 3px rgba(30,26,22,0.06)", "medium": "0 8px 24px rgba(30,26,22,0.10)", "high": "0 20px 48px rgba(30,26,22,0.16)" },
+      "depth_cues": "Sombras suaves difusas + sobreposição leve de camadas (foto sangrando atrás de cartão de texto); sem glassmorphism"
+    },
+    "iconography": {
+      "style": "Line icons, traço médio, cantos levemente arredondados — sem emoji, sem ícones 3D/preenchidos pesados",
+      "stroke_weight": "1.5px",
+      "size_scale": "16 / 20 / 24 / 32px",
+      "preferred_set": "Phosphor Icons (estilo 'regular') para os poucos ícones utilitários necessários (localização, horário, WhatsApp, talher)"
+    },
+    "motion": {
+      "easing": "cubic-bezier(0.22, 1, 0.36, 1) para entradas (ease-out orgânico); ease-in-out suave para transições de estado",
+      "duration_scale": { "micro": "150-200ms", "normal": "400-600ms", "macro": "800-1200ms" },
+      "entrance_pattern": "Fade + deslocamento vertical sutil (12-24px), stagger de 60-100ms entre itens de lista/cardápio",
+      "exit_pattern": "Fade rápido sem deslocamento — saída sempre mais rápida que entrada",
+      "philosophy": "Movimento funcional com alma: cada animação guia o olhar ou expressa apetite/textura, nunca decoração gratuita. Sempre via gsap.matchMedia() respeitando prefers-reduced-motion."
+    },
+    "components": {
+      "button_style": "Preenchido, cantos medium-radius (10px), peso 600, sem sombra pesada; variante ghost com borda 1px para ações secundárias",
+      "input_style": "Borda 1px sutil (neutral.scale[2]), fundo surface.card, sem inner-shadow pesada",
+      "card_style": "Cards de cardápio/ambiente com foto 4:5 ou 1:1, cantos medium-radius, sombra low, texto sobreposto só com contraste garantido (overlay gradiente quando necessário)",
+      "navigation_pattern": "Header fixo transparente sobre o hero, ganha fundo sólido (surface.background + shadow low) ao rolar; menu mobile em overlay full-screen",
+      "modal_style": "Não utilizado no MVP — sem modais obrigatórios no fluxo",
+      "list_style": "Lista de cardápio com divisores finos, preço alinhado à direita com tabular-nums",
+      "component_notes": "Botão/CTA de pedido (WhatsApp) é um componente isolado e reutilizável, para permitir trocar o mecanismo de pedido no futuro sem alterar layout"
+    }
+  },
+  "design_style": {
+    "aesthetic": {
+      "mood": ["acolhedor", "caseiro-com-orgulho", "apetitoso", "honesto", "contemporâneo"],
+      "visual_metaphor": "A mesa posta em casa aos domingos — a fartura e o cuidado do almoço caseiro, elevados por execução editorial",
+      "era_influence": "Editorial gastronômico contemporâneo (mídia de comida 2020s), sem nostalgia retrô",
+      "genre": "Editorial caseiro-contemporâneo — nem fine-dining, nem fast-food",
+      "personality_traits": ["acolhedora", "orgulhosa do que faz", "sem pretensão", "atenciosa", "consistente"],
+      "adjectives": ["quente", "farto", "genuíno", "cuidadoso", "apetitoso"]
+    },
+    "visual_language": {
+      "complexity": "moderate",
+      "ornamentation": "subtle accents",
+      "whitespace_usage": "Generoso em seções institucionais; mais denso e ritmado na seção de cardápio",
+      "visual_weight_distribution": "Fotografia como protagonista; tipografia como segunda voz forte; UI/chrome deliberadamente discreto",
+      "focal_strategy": "single hero element por seção — uma foto/prato em destaque por vez, sem colagens saturadas",
+      "contrast_level": "moderado a alto entre texto e fundo (acessibilidade); baixo entre elementos decorativos",
+      "texture_usage": "Textura orgânica sutil (grão de papel/linho) em fundos claros, nunca sobreposta a texto"
+    },
+    "composition": {
+      "hierarchy_method": "Escala tipográfica + isolamento espacial",
+      "balance_type": "asymmetric nas seções editoriais; symmetric/grid nas seções de cardápio e informação prática",
+      "flow_direction": "Vertical com pontos de respiro; leve zigue-zague esquerda/direita entre blocos de texto e foto",
+      "grouping_strategy": "Agrupamento por categoria de cardápio com âncoras de navegação; proximidade espacial reforça categoria",
+      "negative_space_role": "Espaço negativo generoso funciona como 'prato vazio' — dá à fotografia espaço para respirar e ser desejada"
+    },
+    "imagery": {
+      "photo_treatment": "Fotografia gastronômica quente e natural — luz lateral suave, sem filtro artificial saturado, leve aumento de contraste/calor em pós-produção; nunca banco de imagens genérico",
+      "illustration_style": "Mínima a inexistente — no máximo um elemento gráfico de linha (ex: talher ou folha) como assinatura visual discreta",
+      "graphic_elements": "Linha fina desenhada como divisor/assinatura ocasional; sem ícones decorativos em excesso",
+      "pattern_usage": "Nenhum padrão geométrico decorativo; textura orgânica sutil apenas",
+      "image_shape": "Predominantemente retangular com cantos levemente arredondados; um único elemento de destaque pode ter recorte orgânico sutil, não repetido em série"
+    },
+    "interaction_feel": {
+      "feedback_style": "Sutil e imediato — hover discreto, sem efeitos exagerados",
+      "hover_behavior": "Zoom leve (1.03–1.05x) em fotos de prato; sublinhado/mudança de cor em links; elevação leve em cards",
+      "transition_personality": "smooth glide",
+      "loading_style": "Fade-in progressivo do conteúdo; sem spinners genéricos",
+      "microinteraction_density": "baixa a moderada — cada microinteração precisa justificar sua existência"
+    },
+    "brand_voice_in_ui": {
+      "tone": "Caloroso e direto, como quem recebe à mesa — nunca corporativo, nunca 'vendedor'",
+      "formality": "Informal-cuidado (tratamento 'você', sem gírias forçadas)",
+      "cta_style": "Convite amigável e direto (ex: 'Peça pelo WhatsApp', 'Veja o cardápio')",
+      "empty_state_approach": "Mensagem cordial e clara quando algo não está disponível (ex: cardápio do dia ainda não publicado) — nunca mensagem técnica",
+      "error_tone": "Gentil e prestativo — linguagem simples em formulários/estados de erro, nunca jargão técnico"
+    }
+  },
+  "visual_effects": {
+    "overview": {
+      "effect_intensity": "subtle-accent",
+      "performance_tier": "lightweight",
+      "fallback_strategy": "reduce to CSS (remove parallax/scrub, mantém fades simples)",
+      "primary_technology": "GSAP + ScrollTrigger"
+    },
+    "background_effects": {
+      "type": "none",
+      "description": "Nenhum efeito sintético de fundo (sem gradiente animado/noise/mesh) — fundo é cor sólida da paleta neutra com textura orgânica sutil, para não competir com a fotografia real de comida",
+      "technology": "CSS",
+      "params": { "color_palette": "neutral.scale", "speed": "n/a", "density": "n/a", "opacity": "n/a", "blend_mode": "normal" }
+    },
+    "particle_systems": {
+      "enabled": false,
+      "type": "none",
+      "description": "Não utilizado — não serve à identidade caseira do projeto",
+      "technology": "n/a",
+      "params": { "count": "n/a", "shape": "n/a", "size_range": "n/a", "movement_pattern": "n/a", "color_behavior": "n/a", "interaction": "n/a", "spawn_area": "n/a" }
+    },
+    "3d_elements": {
+      "enabled": false,
+      "type": "none",
+      "description": "Não utilizado — 3D adicionaria peso e uma frieza tecnológica incompatível com o tom caseiro",
+      "technology": "n/a",
+      "params": { "renderer": "n/a", "lighting": "n/a", "camera": "n/a", "materials": "n/a", "geometry": "n/a", "post_processing": "n/a", "interaction_model": "n/a" }
+    },
+    "shader_effects": {
+      "enabled": false,
+      "type": "none",
+      "description": "Não utilizado",
+      "technology": "n/a",
+      "params": { "uniforms": "n/a", "vertex_manipulation": "n/a", "fragment_output": "n/a", "noise_type": "n/a", "distortion": "n/a" }
+    },
+    "scroll_effects": {
+      "parallax": { "enabled": true, "layers": "2 (imagem de fundo + conteúdo em primeiro plano)", "depth_range": "sutil, 10-20% de deslocamento relativo", "speed_curve": "linear suave atrelado ao scroll (scrub) apenas no hero" },
+      "scroll_triggered_animations": { "enabled": true, "trigger_points": "Entrada de cada seção (20% da viewport), itens de cardápio, cards de galeria", "animation_type": "fade-up", "scrub_behavior": "Dispara uma vez (não-scrubbed) na maioria dos elementos; scrub leve reservado ao parallax do hero" },
+      "scroll_morphing": { "enabled": false, "description": "Não se aplica ao tom do projeto — morphing de scroll seria um efeito chamativo demais para a identidade caseira" }
+    },
+    "text_effects": {
+      "type": "fade-up",
+      "description": "Headline do hero revela por palavra ao carregar a página; demais textos usam apenas fade-up simples de bloco",
+      "technology": "GSAP (SplitText ou fallback CSS por spans pré-quebrados)",
+      "params": { "split_strategy": "by-word", "animation_per_unit": "fade + translateY(12px) sutil", "stagger": "40ms", "effect_style": "editorial, discreto" }
+    },
+    "cursor_effects": {
+      "enabled": false,
+      "type": "none",
+      "description": "Cursor customizado não combina com o tom direto/caseiro e adiciona complexidade sem propósito claro",
+      "params": { "shape": "n/a", "size": "n/a", "blend_mode": "n/a", "trail": "n/a", "interaction_zone": "n/a" }
+    },
+    "image_effects": {
+      "type": "reveal-clip",
+      "description": "Fotos revelam com clip-path sutil ao entrar na viewport; hover com zoom leve (1.03x)",
+      "technology": "CSS clip-path + GSAP ScrollTrigger",
+      "params": { "filter_pipeline": "none (sem filtro de cor sintético — fidelidade à foto real)", "hover_transform": "scale(1.03), 400ms ease-out", "reveal_animation": "clip-path inset reveal, 600-800ms ease-out", "distortion_type": "none" }
+    },
+    "glassmorphism_neumorphism": {
+      "enabled": false,
+      "style": "none",
+      "params": { "blur_radius": "n/a", "transparency": "n/a", "border_treatment": "n/a", "shadow_type": "n/a", "light_source_angle": "n/a" }
+    },
+    "canvas_drawings": {
+      "enabled": false,
+      "type": "none",
+      "description": "Não utilizado",
+      "technology": "n/a",
+      "params": { "draw_method": "n/a", "animation_loop": "n/a", "color_scheme": "n/a", "responsiveness": "n/a", "interaction": "n/a" }
+    },
+    "svg_animations": {
+      "enabled": true,
+      "type": "path-draw",
+      "description": "Ícone-assinatura de linha (ex: talher/folha) desenha-se uma vez no carregamento do hero, via stroke-dashoffset",
+      "params": { "animation_method": "stroke-dashoffset", "path_morphing": false, "stroke_animation": "draw-on único, 900ms, ease-out", "filter_effects": "none" }
+    },
+    "composite_notes": "Intensidade de efeito deliberadamente contida: a sofisticação vem de tipografia, fotografia e ritmo, não de efeitos visuais chamativos. WebGL/3D/partículas/shaders foram considerados e descartados por não servirem à identidade caseira e pelo risco de performance em conexões móveis mais lentas (público local de bairro, muitos em 4G). Todo movimento passa por gsap.matchMedia() respeitando prefers-reduced-motion."
+  }
+}

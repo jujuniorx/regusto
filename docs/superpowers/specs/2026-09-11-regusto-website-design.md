@@ -66,15 +66,15 @@ Perfil completo nos três eixos (design_system, design_style, visual_effects) es
 - **Tipografia:** Fraunces (serifada editorial, variable) para display/headings/nomes de prato; Work Sans para corpo/UI/preços (tabular-nums).
 - **Tom:** acolhedor, caseiro-com-orgulho, apetitoso, honesto, contemporâneo — editorial gastronômico, não fine-dining, não fast-food.
 - **Fotografia:** protagonista visual; luz lateral quente, sem filtro sintético, foco em prato/detalhe/textura/ambiente. Fachada real serve só como referência de atmosfera/materiais, não precisa aparecer na composição final.
-- **Movimento:** GSAP + ScrollTrigger, intensidade "subtle-accent" — fades/reveals com stagger sutil, parallax leve só no hero, sem WebGL/3D/partículas/shaders/cursor customizado. `prefers-reduced-motion` respeitado via `gsap.matchMedia()`. Essa contenção é intencional: efeitos pesados não servem à identidade caseira e arriscam performance no público local (muitos em conexão móvel).
+- **Movimento:** GSAP + ScrollTrigger, intensidade "subtle-accent" — fades/reveals com stagger sutil, sem WebGL/3D/partículas/shaders/cursor customizado (salvo caso excepcional justificado durante a implementação — não forçar). `prefers-reduced-motion` respeitado via `gsap.matchMedia()`, sem exceção. **Atualização de 2026-09-11 (ver §11):** parallax/scrub deixou de ser exclusivo do hero — a seção "Como Funciona" ganhou um segundo e único ponto de scrub deliberado, como grande momento interativo do site. Todas as demais seções permanecem no regime original (fade-up disparado uma vez, sem scrub).
 
 ## 5. Arquitetura de informação
 
 Página única (`/`) com navegação por âncoras — o escopo do negócio não justifica multi-página no MVP (YAGNI):
 
-1. **Hero** — foto de prato/ambiente em destaque, headline com a tagline real ("Comida caseira de qualidade"), CTA primário de pedido
-2. **Sobre** — história/bairro/proposta (texto real pendente do cliente; placeholder estruturado até lá)
-3. **Como Funciona** — explica o formato self-service por kg + marmitex + grelhados para quem não conhece
+1. **Hero** — foto de prato/ambiente em destaque (full-bleed/quase full-bleed, real quando houver asset; placeholder estruturado até lá), headline com a tagline real ("Comida caseira de qualidade"), CTA primário de pedido — composição detalhada em §11.1
+2. **Sobre** — história/bairro/proposta (texto real pendente do cliente; placeholder estruturado até lá); storytelling de scroll sutil, ver §11.3
+3. **Como Funciona** — apresenta os três formatos (Self-service, Marmitex, Grelhados) como experiência editorial de scroll, não como três cards genéricos — este é o grande momento interativo do site; composição detalhada em §11.2
 4. **Cardápio** — por categoria real (Grelhados à la Carte, Marmitex, Pastéis, Saladas, Bebidas), com nota visível direcionando ao WhatsApp/Instagram para o prato do dia (que muda diariamente e não é praticável manter estático — ver §6)
 5. **Ambiente** — galeria de fotos (placeholder até receber fotos reais)
 6. **Informações Práticas** — endereço com mapa embutido, horário oficial, formas de pagamento, estacionamento
@@ -125,9 +125,71 @@ Todo componente que mostra horário importa `businessHours.display` — nunca re
 - Formulário próprio de reserva/pedido com backend e e-mail
 - Multi-idioma (site é só pt-BR)
 - Rota `/cardapio` dedicada (estrutura permite adicionar depois)
-- Qualquer efeito visual WebGL/3D/partículas/shader/cursor customizado
+- Qualquer efeito visual WebGL/3D/partículas/shader/cursor customizado, salvo se durante a implementação surgir uma aplicação excepcional e claramente melhor para a Regusto — não deve ser forçado nem buscado ativamente
 - Sistema de controle de capacidade de mesas ou reserva real (não se aplica ao formato self-service)
 
 ## 10. Rastreabilidade de decisões
 
 Este projeto seguiu o processo de brainstorming arquitetural completo: 6 perguntas de esclarecimento em chat (tipo de negócio, identidade visual disponível, objetivo do site, mecanismo de pedido, manutenção de conteúdo, idioma), pesquisa web para confirmar dados reais da empresa, 3 abordagens de arquitetura apresentadas com trade-offs, e aprovação explícita do cliente antes deste documento. Decisões de julgamento profissional tomadas sem nova pergunta ao cliente (autorizado explicitamente por ele) estão documentadas nas seções 2.3 e 3.
+
+## 11. Pesquisa visual no 21st.dev e ajustes de composição — 2026-09-11
+
+### 11.0 Processo e regra de uso do 21st.dev (permanente)
+
+Antes desta rodada de implementação, foi feita uma pesquisa curada no 21st.dev (MCP) por referências visuais para hero, storytelling de scroll, showcases de imagem, estrutura para os formatos de atendimento, cardápio, contato e microinterações. A pesquisa cobriu ~40 componentes candidatos; a maioria foi descartada por ser genuinamente incompatível com a identidade da Regusto (pricing tables de SaaS, formulários de contato com "trust badges", heroes com glassmorphism/vídeo, qualquer coisa em 3D/WebGL). Um reranking semântico pedindo explicitamente "sem cards genéricos" para os três formatos de atendimento só devolveu bento grids e cards de produto — confirmando que o 21st não tem nada pronto para restaurante, e que Cardápio/Contato precisam continuar autorais (ver §11.4).
+
+**Regra permanente:** o 21st.dev é biblioteca de referência, nunca diretor de arte do projeto. Nenhum componente foi ou deve ser instalado/copiado verbatim. Onde uma referência foi aprovada (abaixo), ela serve como inspiração estrutural/de interação — a implementação real é reconstruída inteiramente com os tokens deste documento e do `2026-09-11-regusto-design-dna.json` (cor, tipografia, easing, paleta de movimento), para que o resultado leia como criação própria da Regusto, nunca como "coleção de componentes do 21st".
+
+### 11.1 Hero — fotografia como protagonista
+
+O `Hero.tsx` originalmente desenhado neste projeto (ver plano de implementação) não incluía nenhuma imagem — apenas fundo de cor sólida (`bg-secondary`). Isso contradizia a própria diretriz deste spec (fotografia como protagonista) e foi corrigido a partir da referência "Editorial Image Hero" pesquisada no 21st (estrutura: foto full-bleed + fade + tagline + headline serifada + CTA — **não copiada**, só usada como inspiração de composição).
+
+Decisão final:
+- **Camada de foto**: full-bleed/quase full-bleed ocupando a maior parte do hero, real quando o cliente enviar o asset; até lá, `PhotoPlaceholder` no mesmo enquadramento (ponto de troca único, sem retrabalho de layout). Nunca inventar ou usar banco de imagens genérico — pendência de conteúdo já registrada em §6.
+- **Camada de scrim**: gradiente sutil (transparente → `secondary`) sobre a foto, garantindo legibilidade do texto claro já definido — esta é a "transição elegante" pedida, resolvida com o parallax de 2 camadas que o Design DNA já previa para o hero (`visual_effects.scroll_effects.parallax`), sem token novo.
+- **Rótulo locacional discreto** (novo, pequeno): usa o token tipográfico `caption` já definido no Design DNA (0.8125rem/peso 500), com dado real já existente em `siteContent.address` (ex.: "Jardim América, Bauru — SP"). Sem caixa alta decorativa (evita o tell de "eyebrow label" genérico). Não é uma tagline nova nem informação institucional inventada — é composição de campos já confirmados.
+- **Headline**: mantém a tagline real já aprovada ("Comida caseira de qualidade") como elemento tipográfico principal, preservando o mecanismo de *word-reveal* já validado no projeto — mas migrando de divisão manual de string (`split(" ")` + spans manuais) para **GSAP `SplitText`** real, que o próprio Design DNA já apontava como tecnologia-alvo (`text_effects.technology`), com o split manual apenas como fallback teórico, não como implementação principal.
+- **Corpo e CTA**: inalterados (`siteContent.description`, `WhatsAppOrderButton`).
+- **Ícone-assinatura**: mantido (path-draw já validado, sem mudança).
+
+Nenhuma tagline ou dado institucional novo foi inventado nesta etapa — tudo vem de `siteContent` já existente.
+
+### 11.2 Como Funciona — experiência editorial de scroll (grande momento do site)
+
+A seção "Como Funciona" deixa de ser uma grade de 3 cards genéricos (self-service, marmitex, grelhados) e passa a ser uma **experiência de scroll horizontal editorial**, referência estrutural aprovada: "Horizontal Feature Reveal" do 21st.dev — **não instalada nem copiada**; reconstruída do zero com os tokens da Regusto. Esta seção é declarada, por decisão explícita do cliente, **o grande momento interativo do site** — o único lugar além do hero onde o site usa scroll-scrub/parallax (ver regra de hierarquia de motion em §11.3).
+
+Decisões de adaptação (respondendo ponto a ponto ao que a referência do 21st trazia):
+- **Numeração**: a referência original usava "01/02/03" como se fossem etapas de um processo. **Self-service, marmitex e grelhados não são uma sequência** — são três formatos paralelos de atender o cliente. Decisão final: **nenhum numeral**. O nome de cada formato ("Self-service", "Marmitex", "Grelhados" — em type sentence-case, não caixa alta decorativa) é o próprio elemento tipográfico gigante, na mesma escala `display` do hero. Isso evita o tell de numeração-como-processo e reforça a leitura editorial em vez de "onboarding em 3 passos".
+- **Tipografia**: `display` (Fraunces) para o nome do formato, `body` (Work Sans) para a descrição — sem introduzir escala nova.
+- **Cores**: fundo `secondary` (verde-oliva) / texto `neutral-100`, estendendo a regra de inversão de contraste que o Design DNA já reservava para seções institucionais de destaque (ver DNA JSON, `contrast_strategy`, atualizado nesta data). Cria um ritmo escuro→claro→**escuro (momento alto)**→claro ao longo da página, reforçando esta seção como pico visual e de movimento, não só de movimento.
+- **Espaçamento/composição**: cada formato ocupa um painel full-viewport dividido em foto (metade) + texto (metade), seguindo o `focal_strategy` do Design DNA ("uma foto em destaque por vez, sem colagens saturadas") — uma foto real por formato (self-service = balcão/prato montado, marmitex = embalagem pronta, grelhados = prato grelhado), `PhotoPlaceholder` até o cliente enviar os assets.
+- **Transições/comportamento (desktop, ≥1024px)**: trilha horizontal fixada (`position: sticky` + `ScrollTrigger` com `scrub`) que avança conforme o scroll vertical — o "grande momento" pedido. Parallax de imagem sutil (10–20%, mesmo `depth_range` já definido no Design DNA para o hero). Distância de scroll dimensionada para 3 painéis (mais curta que a referência original, pensada para 4) — ajustável na implementação conforme sensação real ao testar.
+- **Mobile/tablet (<1024px)**: **sem scroll-jack horizontal.** Pilha vertical estática reaproveitando o componente `Reveal` já existente no projeto (fade + translateY sutil, mesmo padrão de entrada do resto do site) — nenhuma mecânica nova só para mobile, o que mantém a experiência do público local (majoritariamente mobile, conforme §7) simples e coerente com o resto do site.
+- **Acessibilidade**: ordem do DOM é sempre nome → descrição → foto (independente da disposição visual esquerda/direita, resolvida via CSS, nunca por reordenação física); nenhum listener customizado de wheel/touch é usado (o scroll nativo continua funcionando para teclado/scroll normal); a seção não deve interceptar ou bloquear a rolagem por teclado.
+- **Reduced motion**: correção deliberada de uma falha observada na referência do 21st (lá, o `prefers-reduced-motion` desligava só os reveals de texto, mas mantinha o scroll-jack horizontal ativo). Na Regusto, sob `prefers-reduced-motion: reduce`, a seção renderiza **o mesmo layout estático empilhado do mobile**, mesmo em desktop — nunca uma versão "parada" do layout horizontal, que ficaria confusa sem o scroll para guiá-la.
+
+### 11.3 Regra permanente: hierarquia de motion do site
+
+A partir desta data, o site segue uma hierarquia de intensidade de movimento explícita — nenhuma seção fora do Hero e do Como Funciona deve introduzir scrub, pin ou parallax novo sem atualizar esta regra:
+
+| Seção | Papel do motion |
+|---|---|
+| Hero | Impacto — parallax de 2 camadas + reveal de texto ao carregar |
+| Como Funciona | Grande momento — único outro ponto de scrub/pin do site |
+| Sobre / Ambiente | Storytelling sutil — fade-up simples, sem scrub (referência de scroll sticky do 21st, "Scroll 01", pode inspirar um crossfade de imagem sutil aqui, mas sem competir com Como Funciona) |
+| Cardápio | Clareza e conversão — sem efeito de destaque, foco em leitura e ação |
+| Contato | Ação — foco no CTA de WhatsApp, sem decoração de movimento |
+
+Não transformar todas as seções em experiências altamente animadas é uma decisão de identidade, não uma limitação técnica.
+
+### 11.4 Cardápio e Contato/Localização — permanecem autorais
+
+Confirmado: o 21st.dev não tem solução adequada para nenhum dos dois (só pricing tables de SaaS, cards de produto de app de delivery e formulários de contato com captura de lead). Nenhum componente externo deve ser forçado nessas seções. Prioridade do Cardápio, em ordem: **experiência visual + legibilidade + descoberta + facilidade de pedido** — a estrutura já definida em §5.4 (categorias reais, nota de prato do dia, preços tabulares) e §6 permanece válida; refinamentos de composição ficam a critério da implementação, sempre autorais.
+
+### 11.5 Dependências técnicas
+
+Nenhuma biblioteca nova além do que já estava decidido (`gsap`, `@gsap/react`). **GSAP `SplitText`** passa a ser usado deliberadamente (não é dependência nova — plugin do próprio pacote `gsap`, gratuito para todos desde a mudança de licenciamento GreenSock/Webflow) para o reveal do headline do hero e dos nomes de formato em Como Funciona, substituindo a divisão manual de string por spans. **Framer Motion não entra no projeto** — onde uma referência do 21st usava Framer Motion (ex.: "Scroll 01"), a ideia é reconstruída em GSAP + ScrollTrigger, que já é a stack de movimento do projeto.
+
+### 11.6 WebGL/3D/partículas/shaders — reafirmação
+
+Continuam fora de escopo (§9), reafirmado após a pesquisa no 21st ter encontrado várias referências tecnicamente interessantes nessa linha (galeria 3D, coverflow, hero com Three.js) — todas descartadas por incompatibilidade com a identidade caseira e o público majoritariamente mobile. Só devem ser reconsideradas se, durante a implementação, surgir uma aplicação excepcional e claramente melhor para a Regusto — nunca por padrão, nunca forçado.

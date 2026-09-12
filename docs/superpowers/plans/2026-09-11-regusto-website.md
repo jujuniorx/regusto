@@ -17,7 +17,9 @@
 - Colors (Tailwind tokens, exact hex from spec): `primary #A8432B`, `secondary #2F3B2E`, `accent #E8A33D`, `neutral-100 #FBF6EE` … `neutral-700 #1E1A16`, `surface-background #FBF6EE`, `surface-card #FFFDF8`, `surface-elevated #F1E7D8`.
 - Fonts: **Fraunces** (`font-heading`) for headings/display, **Work Sans** (`font-sans`) for body/UI/prices, both via `next/font/google`.
 - Radii: `sm 4px`, `md 10px`, `lg 20px`, `pill 999px`.
-- Motion: GSAP + ScrollTrigger only — no WebGL/Three.js/particles/shaders/custom cursor (explicitly out of scope per spec §9). Every animation must be wrapped so `prefers-reduced-motion: reduce` disables movement (`gsap.matchMedia()`), per spec §7. The spec's "ease-out orgânico" cubic-bezier(0.22,1,0.36,1) is implemented with GSAP's built-in `"power3.out"` (no CustomEase plugin — closest stock ease, avoids an unneeded dependency).
+- Motion: GSAP + ScrollTrigger (+ `SplitText`, added in Task 5 — part of the `gsap` package, no separate install) only — no Framer Motion, no WebGL/Three.js/particles/shaders/custom cursor (explicitly out of scope per spec §9, unless an exceptional case justifies it during implementation — never forced). Every animation must be wrapped so `prefers-reduced-motion: reduce` disables movement (`gsap.matchMedia()`), per spec §7 — with no exception, including the Hero and Como Funciona sections below. The spec's "ease-out orgânico" cubic-bezier(0.22,1,0.36,1) is implemented with GSAP's built-in `"power3.out"` (no CustomEase plugin — closest stock ease, avoids an unneeded dependency).
+- **Motion hierarchy (spec §11.3, permanent rule):** Hero = impact (2-layer parallax + text reveal on load). Como Funciona = the site's one big interactive moment — the only other section allowed to use scroll-scrub/pin. Sobre/Ambiente = subtle storytelling, one-shot fade-up only, no scrub. Cardápio = clarity/conversion, no motion flourish. Contato = action-focused, no decorative motion. No task in this plan may add scrub/pin to a section other than Hero (Task 8) or Como Funciona (Task 10) without updating this rule first.
+- 21st.dev was used only as a curated research/reference step before this plan (spec §11) — no component from it is installed or copied verbatim anywhere in this plan. Where a task below cites a 21st pattern (Editorial Image Hero, Horizontal Feature Reveal), it is rebuilt from scratch with this project's own tokens, content, and GSAP stack.
 - Content: no hardcoded business facts inside components. Everything (name, tagline, address, phone, WhatsApp number, hours, payment methods, CNPJ, menu items/prices) comes from `src/content/site.ts` / `src/content/menu.ts`.
 - Business hours: single source of truth is `siteContent.businessHours` (spec §2.4, §6) — never duplicate the hours string in a component.
 - No automated unit test framework for this MVP (spec §8 — content/marketing site, no business logic). Each task's verification is `npm run build` (type-check + lint, since Next.js runs ESLint during build) plus a concrete manual browser check described in the task.
@@ -370,7 +372,7 @@ git commit -m "feat: add typed content layer for site data and menu"
 
 **Interfaces:**
 - Consumes: Tailwind tokens from Task 2
-- Produces: `Button({variant?: "primary"|"ghost", href?, children, className?, ...rest})`, `Container({children, className?})`, `Section({id?, className?, children})`, `SectionHeading({overline?, title, align?: "left"|"center"})`, `PhotoPlaceholder({label, aspectClassName?, className?})`, and icons `MapPinIcon`, `ClockIcon`, `MenuIcon`, `CloseIcon`, `WhatsAppIcon` (all `(props: SVGProps<SVGSVGElement>) => JSX.Element`) — used by every section task from here on
+- Produces: `Button({variant?: "primary"|"ghost", href?, children, className?, ...rest})`, `Container({children, className?})`, `Section({id?, className?, children})`, `SectionHeading({overline?, title, align?: "left"|"center"})`, `PhotoPlaceholder({label, aspectClassName?, roundedClassName?, className?})`, and icons `MapPinIcon`, `ClockIcon`, `MenuIcon`, `CloseIcon`, `WhatsAppIcon` (all `(props: SVGProps<SVGSVGElement>) => JSX.Element`) — used by every section task from here on
 
 - [ ] **Step 1: `src/components/ui/Button.tsx`**
 
@@ -473,17 +475,28 @@ export function SectionHeading({ overline, title, align = "left" }: SectionHeadi
 export interface PhotoPlaceholderProps {
   label: string;
   aspectClassName?: string;
+  roundedClassName?: string;
   className?: string;
 }
 
 // Usado onde uma foto real ainda não foi recebida do cliente (spec §6).
 // Substituir por <Image> real quando os arquivos chegarem.
-export function PhotoPlaceholder({ label, aspectClassName = "aspect-[4/5]", className }: PhotoPlaceholderProps) {
+// roundedClassName is its own prop (not folded into className) because Tailwind's
+// generated stylesheet orders radius utilities by scale, not by className string
+// order — passing "rounded-none" in className would not reliably beat a hardcoded
+// "rounded-lg". Callers that need a square-cornered, full-bleed placeholder (e.g.
+// the Hero) pass roundedClassName="" instead.
+export function PhotoPlaceholder({
+  label,
+  aspectClassName = "aspect-[4/5]",
+  roundedClassName = "rounded-lg",
+  className,
+}: PhotoPlaceholderProps) {
   return (
     <div
       role="img"
       aria-label={label}
-      className={`flex items-center justify-center rounded-lg bg-neutral-200 text-center text-sm text-neutral-500 ${aspectClassName} ${className ?? ""}`}
+      className={`flex items-center justify-center bg-neutral-200 text-center text-sm text-neutral-500 ${roundedClassName} ${aspectClassName} ${className ?? ""}`}
     >
       <span className="px-4">{label}</span>
     </div>
@@ -574,7 +587,7 @@ git commit -m "feat: add shared UI primitives (Button, Container, Section, icons
 
 **Interfaces:**
 - Consumes: nothing new (pure infra)
-- Produces: `gsap`, `ScrollTrigger`, `useGSAP` re-exported from `@/lib/gsap` (plugin registration happens once, here); `Reveal({children, className?, delay?})` (from `@/components/ui/Reveal`) — the fade-up-on-scroll wrapper reused by most sections
+- Produces: `gsap`, `ScrollTrigger`, `SplitText`, `useGSAP` re-exported from `@/lib/gsap` (plugin registration happens once, here); `Reveal({children, className?, delay?})` (from `@/components/ui/Reveal`) — the fade-up-on-scroll wrapper reused by most sections
 
 - [ ] **Step 1: Install GSAP**
 
@@ -583,21 +596,26 @@ Run:
 npm install gsap @gsap/react
 ```
 
-- [ ] **Step 2: Centralize plugin registration in `src/lib/gsap.ts`**
+- [ ] **Step 2: Verify the current `SplitText` import path via context7 before wiring it up**
+
+`SplitText` is a GSAP plugin (free in the `gsap` package for all users since the GreenSock/Webflow licensing change — no Club GreenSock registry, no extra install beyond Step 1). Package APIs shift between versions, so before writing the registration below, query context7 for the installed `gsap` version's current `SplitText` import path and registration pattern (it has moved at least once, e.g. `gsap/SplitText` vs. a scoped export) and use whatever it confirms instead of assuming the snippet here is still exact.
+
+- [ ] **Step 3: Centralize plugin registration in `src/lib/gsap.ts`**
 
 ```ts
 "use client";
 
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { SplitText } from "gsap/SplitText";
 import { useGSAP } from "@gsap/react";
 
-gsap.registerPlugin(ScrollTrigger, useGSAP);
+gsap.registerPlugin(ScrollTrigger, SplitText, useGSAP);
 
-export { gsap, ScrollTrigger, useGSAP };
+export { gsap, ScrollTrigger, SplitText, useGSAP };
 ```
 
-- [ ] **Step 3: Build the `Reveal` primitive**
+- [ ] **Step 4: Build the `Reveal` primitive**
 
 ```tsx
 // src/components/ui/Reveal.tsx
@@ -652,17 +670,17 @@ export function Reveal({ children, className, delay = 0 }: RevealProps) {
 }
 ```
 
-- [ ] **Step 4: Verify with a throwaway visual check**
+- [ ] **Step 5: Verify with a throwaway visual check**
 
 Temporarily wrap the default homepage's `<h1>` in `<Reveal>` (import from `@/components/ui/Reveal`), run `npm run dev`, reload `http://localhost:3000`, and confirm the heading fades/slides up shortly after load. Then revert that temporary edit (do not commit it) — this task ships only the primitive, not a page using it yet.
 
 Run: `npm run build` — expect no errors.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add package.json package-lock.json src/lib/gsap.ts src/components/ui/Reveal.tsx
-git commit -m "feat: install GSAP and add Reveal scroll-in primitive"
+git commit -m "feat: install GSAP (+ SplitText) and add Reveal scroll-in primitive"
 ```
 
 ---
@@ -724,7 +742,7 @@ git commit -m "feat: add reusable WhatsApp order button"
 
 **Interfaces:**
 - Consumes: `gsap`, `ScrollTrigger`, `useGSAP` (`@/lib/gsap`), `siteContent` (`@/content/site`), `WhatsAppOrderButton`, `MenuIcon`, `CloseIcon`
-- Produces: `Header()` — fixed nav, rendered first in `page.tsx` (Task 13). Anchor targets it links to (`#sobre`, `#como-funciona`, `#cardapio`, `#ambiente`, `#informacoes`, `#contato`) are the section `id`s that Tasks 9–12 must use verbatim.
+- Produces: `Header()` — fixed nav, rendered first in `page.tsx` (Task 14). Anchor targets it links to (`#sobre`, `#como-funciona`, `#cardapio`, `#ambiente`, `#informacoes`, `#contato`) are the section `id`s that Tasks 9–13 must use verbatim.
 
 - [ ] **Step 1: Write the component**
 
@@ -818,7 +836,7 @@ export function Header() {
 
 - [ ] **Step 2: Verify manually**
 
-Temporarily render `<Header />` alone on the homepage (`@/components/Header`), run `npm run dev`. Confirm: header is transparent at the top, gains a cream background + shadow after scrolling ~80px, desktop nav links are visible ≥768px width, and at <768px the hamburger opens a full-screen overlay menu that closes on link click. Revert the temporary render (Task 13 wires it in permanently).
+Temporarily render `<Header />` alone on the homepage (`@/components/Header`), run `npm run dev`. Confirm: header is transparent at the top, gains a cream background + shadow after scrolling ~80px, desktop nav links are visible ≥768px width, and at <768px the hamburger opens a full-screen overlay menu that closes on link click. Revert the temporary render (Task 14 wires it in permanently).
 
 Run: `npm run build` — expect no errors.
 
@@ -831,13 +849,15 @@ git commit -m "feat: add site header with scroll-aware background and mobile men
 
 ---
 
-### Task 8: Hero section
+### Task 8: Hero section — full-bleed photography, editorial reveal
+
+Per spec §11.1: the hero must make photography the protagonist (it did not before this revision — the original draft had no image at all, just a solid `bg-secondary` fill). Structural inspiration only from the 21st.dev "Editorial Image Hero" reference (not copied): full-bleed photo, elegant fade, tagline, large display type, CTA. Rebuilt here with this project's own tokens, real content, and the word-reveal mechanic already validated for this project — now implemented with real GSAP `SplitText` instead of manual string-splitting, per spec §11.1 and the Design DNA's `text_effects.technology`.
 
 **Files:**
 - Create: `src/components/Hero.tsx`
 
 **Interfaces:**
-- Consumes: `gsap`, `useGSAP` (`@/lib/gsap`), `siteContent`, `WhatsAppOrderButton`
+- Consumes: `gsap`, `SplitText`, `useGSAP` (`@/lib/gsap`), `siteContent`, `WhatsAppOrderButton`, `PhotoPlaceholder` (`@/components/ui/PhotoPlaceholder`)
 - Produces: `Hero()` with `id="hero"` (the header's logo link targets `#hero`)
 
 - [ ] **Step 1: Write the component**
@@ -847,14 +867,14 @@ git commit -m "feat: add site header with scroll-aware background and mobile men
 "use client";
 
 import { useRef } from "react";
-import { gsap, useGSAP } from "@/lib/gsap";
+import { gsap, SplitText, useGSAP } from "@/lib/gsap";
 import { siteContent } from "@/content/site";
 import { WhatsAppOrderButton } from "@/components/WhatsAppOrderButton";
-
-const HEADLINE_WORDS = siteContent.tagline.split(" ");
+import { PhotoPlaceholder } from "@/components/ui/PhotoPlaceholder";
 
 export function Hero() {
   const scopeRef = useRef<HTMLDivElement>(null);
+  const headlineRef = useRef<HTMLHeadingElement>(null);
 
   useGSAP(
     () => {
@@ -863,25 +883,31 @@ export function Hero() {
       mm.add({ motionReduced: "(prefers-reduced-motion: reduce)" }, (context) => {
         const { motionReduced } = context.conditions as { motionReduced: boolean };
 
-        gsap.set(".hero-word-inner", { yPercent: motionReduced ? 0 : 110 });
+        gsap.set(".hero-photo", { autoAlpha: motionReduced ? 1 : 0, scale: motionReduced ? 1 : 1.04 });
         gsap.set(".hero-signature-path", {
           strokeDasharray: 300,
           strokeDashoffset: motionReduced ? 0 : 300,
         });
 
-        if (motionReduced) return;
+        // SplitText needs the real Fraunces text laid out before it can measure
+        // lines — next/font has already loaded it by the time this effect runs.
+        const split = headlineRef.current
+          ? new SplitText(headlineRef.current, { type: "lines", mask: "lines" })
+          : null;
+        if (split) gsap.set(split.lines, { yPercent: motionReduced ? 0 : 110 });
 
-        const tl = gsap.timeline({ delay: 0.2 });
-        tl.to(".hero-word-inner", {
-          yPercent: 0,
-          duration: 0.7,
-          ease: "power3.out",
-          stagger: 0.06,
-        }).to(
-          ".hero-signature-path",
-          { strokeDashoffset: 0, duration: 0.9, ease: "power2.inOut" },
-          "-=0.3"
-        );
+        if (!motionReduced) {
+          const tl = gsap.timeline({ delay: 0.15 });
+          tl.to(".hero-photo", { autoAlpha: 1, scale: 1, duration: 1.1, ease: "power2.out" })
+            .to(
+              split ? split.lines : [],
+              { yPercent: 0, duration: 0.7, ease: "power3.out", stagger: 0.06 },
+              "-=0.7"
+            )
+            .to(".hero-signature-path", { strokeDashoffset: 0, duration: 0.9, ease: "power2.inOut" }, "-=0.3");
+        }
+
+        return () => split?.revert();
       });
 
       return () => mm.revert();
@@ -893,31 +919,51 @@ export function Hero() {
     <section
       ref={scopeRef}
       id="hero"
-      className="relative flex min-h-[90vh] flex-col justify-end overflow-hidden bg-secondary px-6 pb-16 pt-32 text-neutral-100 sm:px-10"
+      className="relative flex min-h-[92vh] flex-col justify-end overflow-hidden px-6 pb-16 pt-32 text-neutral-100 sm:px-10"
     >
-      <svg
-        className="hero-signature-path mb-6 h-10 w-10 text-accent"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={1.5}
-        aria-hidden="true"
-      >
-        <path d="M6 2v8a2 2 0 0 0 2 2v10M10 2v6M14 2v6M14 2a3 3 0 0 1 3 3v5a2 2 0 0 1-2 2v10" />
-      </svg>
+      {/* PLACEHOLDER: swap for a real prato/ambiente photo (next/image) the moment
+          the client sends one — spec §6/§11.1. Layout does not change either way. */}
+      <div className="hero-photo absolute inset-0">
+        <PhotoPlaceholder
+          label="Foto de prato ou ambiente da Regusto em destaque"
+          aspectClassName="h-full"
+          roundedClassName=""
+          className="h-full w-full"
+        />
+      </div>
+      <div className="absolute inset-0 bg-gradient-to-t from-secondary via-secondary/55 to-secondary/10" />
 
-      <h1 className="max-w-3xl font-heading text-[clamp(2.75rem,6vw,5.5rem)] font-medium leading-[1.02] tracking-[-0.01em]">
-        {HEADLINE_WORDS.map((word, i) => (
-          <span key={`${word}-${i}`} className="mr-3 inline-block overflow-hidden align-bottom">
-            <span className="hero-word-inner inline-block">{word}</span>
-          </span>
-        ))}
-      </h1>
+      <div className="relative z-10">
+        <svg
+          className="hero-signature-path mb-6 h-10 w-10 text-accent"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.5}
+          aria-hidden="true"
+        >
+          <path d="M6 2v8a2 2 0 0 0 2 2v10M10 2v6M14 2v6M14 2a3 3 0 0 1 3 3v5a2 2 0 0 1-2 2v10" />
+        </svg>
 
-      <p className="mt-6 max-w-xl text-lg text-neutral-200">{siteContent.description}</p>
+        {/* Quiet locational line — real siteContent.address fields, not a new
+            invented tagline. Sentence case on purpose (spec §11.1: no decorative
+            all-caps eyebrow). */}
+        <p className="text-[0.8125rem] font-medium tracking-[0.01em] text-neutral-200">
+          {siteContent.address.neighborhood}, {siteContent.address.city} — {siteContent.address.state}
+        </p>
 
-      <div className="mt-8">
-        <WhatsAppOrderButton />
+        <h1
+          ref={headlineRef}
+          className="mt-3 max-w-3xl font-heading text-[clamp(2.75rem,6vw,5.5rem)] font-medium leading-[1.02] tracking-[-0.01em]"
+        >
+          {siteContent.tagline}
+        </h1>
+
+        <p className="mt-6 max-w-xl text-lg text-neutral-200">{siteContent.description}</p>
+
+        <div className="mt-8">
+          <WhatsAppOrderButton />
+        </div>
       </div>
     </section>
   );
@@ -926,28 +972,29 @@ export function Hero() {
 
 - [ ] **Step 2: Verify manually**
 
-Temporarily render `<Hero />` alone on the homepage, run `npm run dev`. Confirm: on load, the headline words slide up into place word-by-word, the small signature icon draws itself in, background is the dark olive `secondary` color, and the WhatsApp CTA is visible and clickable. Then enable "reduce motion" in OS accessibility settings (or devtools rendering emulation), reload, and confirm the headline and icon appear instantly with no animation. Revert the temporary render.
+Temporarily render `<Hero />` alone on the homepage, run `npm run dev`. Confirm: on load, the placeholder photo fades/scales gently into place, the headline reveals via a line-mask (not a visible flash of unsplit text before the effect attaches), the small signature icon draws itself in, the locational line reads the real neighborhood/city/state, and the WhatsApp CTA is visible and clickable. Then enable "reduce motion" (OS setting or devtools rendering emulation), reload, and confirm the photo, headline, and icon all appear instantly at their final state with no animation. Revert the temporary render.
 
 Run: `npm run build` — expect no errors.
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add src/components/Hero.tsx
-git commit -m "feat: add hero section with word-reveal headline"
+git add src/components/Hero.tsx src/components/ui/PhotoPlaceholder.tsx
+git commit -m "feat: add hero section with full-bleed photo and SplitText headline reveal"
 ```
 
 ---
 
-### Task 9: About and How It Works sections
+### Task 9: About section
 
 **Files:**
 - Create: `src/components/About.tsx`
-- Create: `src/components/HowItWorks.tsx`
 
 **Interfaces:**
 - Consumes: `Section`, `Container`, `SectionHeading`, `PhotoPlaceholder`, `Reveal` (all `@/components/ui/*`)
-- Produces: `About()` with `id="sobre"`, `HowItWorks()` with `id="como-funciona"`
+- Produces: `About()` with `id="sobre"`
+
+Motion for this section stays deliberately quiet (spec §11.3: "Sobre/Ambiente → storytelling sutil") — plain `Reveal` fade-up, no scrub, no sticky media. That budget is spent in Task 10 instead.
 
 - [ ] **Step 1: `src/components/About.tsx`**
 
@@ -980,66 +1027,208 @@ export function About() {
 }
 ```
 
-- [ ] **Step 2: `src/components/HowItWorks.tsx`**
+- [ ] **Step 2: Verify manually**
 
-```tsx
-import { Section } from "@/components/ui/Section";
-import { Container } from "@/components/ui/Container";
-import { SectionHeading } from "@/components/ui/SectionHeading";
-import { Reveal } from "@/components/ui/Reveal";
-
-const STEPS = [
-  {
-    title: "Escolha no self-service",
-    description: "Monte seu prato por quilo, com grelhados, saladas e acompanhamentos frescos todos os dias.",
-  },
-  {
-    title: "Ou peça um marmitex",
-    description: "Praticidade para levar: marmitex montado, pronto para retirada ou entrega.",
-  },
-  {
-    title: "Grelhados à la carte",
-    description: "Peça um grelhado específico direto no balcão, feito na hora.",
-  },
-];
-
-export function HowItWorks() {
-  return (
-    <Section id="como-funciona" className="bg-neutral-200">
-      <Container>
-        <SectionHeading overline="Como funciona" title="Três jeitos de almoçar na Regusto" align="center" />
-        <div className="mt-12 grid gap-8 md:grid-cols-3">
-          {STEPS.map((step, i) => (
-            <Reveal key={step.title} delay={i * 0.1}>
-              <div className="rounded-lg bg-surface-card p-6 shadow-[0_1px_3px_rgba(30,26,22,0.06)]">
-                <h3 className="font-heading text-xl font-semibold text-neutral-700">{step.title}</h3>
-                <p className="mt-2 text-sm text-neutral-600">{step.description}</p>
-              </div>
-            </Reveal>
-          ))}
-        </div>
-      </Container>
-    </Section>
-  );
-}
-```
-
-- [ ] **Step 3: Verify manually**
-
-Temporarily render both under the Hero on the homepage, run `npm run dev`, scroll down, and confirm each block fades up into place as it enters the viewport (using the `Reveal` behavior already verified in Task 5). Revert the temporary render.
+Temporarily render `<About />` under the Hero on the homepage, run `npm run dev`, scroll down, and confirm the block fades up into place as it enters the viewport (the `Reveal` behavior already verified in Task 5). Revert the temporary render.
 
 Run: `npm run build` — expect no errors.
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 3: Commit**
 
 ```bash
-git add src/components/About.tsx src/components/HowItWorks.tsx
-git commit -m "feat: add About and How It Works sections"
+git add src/components/About.tsx
+git commit -m "feat: add About section"
 ```
 
 ---
 
-### Task 10: Cardápio (menu) section
+### Task 10: Como Funciona — editorial scroll experience (the site's one big motion moment)
+
+Per spec §11.2/§11.3: this section presents Self-service, Marmitex and Grelhados as three **parallel formats**, not three generic feature cards and not a numbered 3-step process. Structural inspiration only from the 21st.dev "Horizontal Feature Reveal" reference (**not installed, not copied**) — a pinned horizontal scroll-jack that this task rebuilds from scratch with Regusto's own tokens, copy, and photography, fixing two things the reference got wrong for this project: it treated "01/02/03" as literal step numbers, and it left the horizontal scroll active under `prefers-reduced-motion`. Neither carries over here. This is the **only other section besides the Hero allowed to use scroll-scrub** — every other section stays on the plain one-shot `Reveal` fade-up.
+
+**Files:**
+- Create: `src/components/HowItWorks.tsx`
+
+**Interfaces:**
+- Consumes: `gsap`, `SplitText`, `useGSAP` (`@/lib/gsap`), `Reveal`, `PhotoPlaceholder` (`@/components/ui/*`)
+- Produces: `HowItWorks()` with `id="como-funciona"`
+
+- [ ] **Step 1: Write the component**
+
+```tsx
+// src/components/HowItWorks.tsx
+"use client";
+
+import { useRef } from "react";
+import { gsap, SplitText, useGSAP } from "@/lib/gsap";
+import { Reveal } from "@/components/ui/Reveal";
+import { PhotoPlaceholder } from "@/components/ui/PhotoPlaceholder";
+
+interface ServiceFormat {
+  name: string;
+  description: string;
+  photoLabel: string;
+}
+
+// Three parallel ways to eat at Regusto, not a sequence — no 01/02/03 numbering
+// (spec §11.2). The format name itself is the giant typographic element.
+const FORMATS: ServiceFormat[] = [
+  {
+    name: "Self-service",
+    description:
+      "Sirva-se à vontade no buffet por quilo, com grelhados, saladas e acompanhamentos renovados todos os dias.",
+    photoLabel: "Balcão do self-service da Regusto com pratos montados",
+  },
+  {
+    name: "Marmitex",
+    description:
+      "Praticidade para o dia a dia: marmitex montado na hora, pronto pra retirar ou pedir pelo WhatsApp.",
+    photoLabel: "Marmitex fechado, pronto para viagem",
+  },
+  {
+    name: "Grelhados",
+    description: "Peça um grelhado à la carte direto no balcão e leve pra casa na hora que preferir.",
+    photoLabel: "Grelhado servido em prato, close no detalhe da carne",
+  },
+];
+
+export function HowItWorks() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+
+  useGSAP(
+    () => {
+      const mm = gsap.matchMedia();
+
+      // 1024px mirrors the `lg` breakpoint used in the JSX below — if that
+      // breakpoint is ever customized in the Tailwind theme, update this too.
+      // Below 1024px, OR under prefers-reduced-motion at any width, this branch
+      // never runs and the plain stacked markup (already reduced-motion-safe via
+      // Reveal) is what renders — no motionless version of the pinned layout.
+      mm.add("(min-width: 1024px) and (prefers-reduced-motion: no-preference)", () => {
+        if (!wrapperRef.current || !trackRef.current) return;
+
+        const panels = gsap.utils.toArray<HTMLElement>(".format-panel", trackRef.current);
+        const slice = 100 / panels.length;
+        const splits: SplitText[] = [];
+
+        gsap.to(trackRef.current, {
+          xPercent: (-100 * (panels.length - 1)) / panels.length,
+          ease: "none",
+          scrollTrigger: {
+            trigger: wrapperRef.current,
+            start: "top top",
+            end: "bottom bottom",
+            scrub: true,
+          },
+        });
+
+        panels.forEach((panel, i) => {
+          const start = `${i * slice}% top`;
+          const end = `${(i + 1) * slice}% top`;
+
+          const name = panel.querySelector<HTMLElement>(".format-name");
+          if (name) {
+            const split = new SplitText(name, { type: "lines", mask: "lines" });
+            splits.push(split);
+            gsap.from(split.lines, {
+              yPercent: 100,
+              duration: 0.8,
+              ease: "power3.out",
+              scrollTrigger: { trigger: wrapperRef.current, start, end, toggleActions: "play none none reverse" },
+            });
+          }
+
+          const image = panel.querySelector<HTMLElement>(".format-image");
+          if (image) {
+            gsap.fromTo(
+              image,
+              { xPercent: 8 },
+              { xPercent: -8, ease: "none", scrollTrigger: { trigger: wrapperRef.current, start, end, scrub: true } }
+            );
+          }
+        });
+
+        return () => splits.forEach((split) => split.revert());
+      });
+
+      return () => mm.revert();
+    },
+    { scope: sectionRef }
+  );
+
+  return (
+    <section id="como-funciona" ref={sectionRef} className="relative bg-secondary text-neutral-100">
+      {/* Desktop, motion-safe: pinned horizontal track — the site's one big
+          scroll moment (spec §11.3). Hidden by CSS, not JS, below 1024px or
+          under reduced motion, so the stacked fallback below is what's live. */}
+      <div ref={wrapperRef} className="hidden lg:motion-safe:block lg:motion-safe:h-[300vh]">
+        <div className="sticky top-0 flex h-screen overflow-hidden">
+          <div ref={trackRef} className="flex">
+            {FORMATS.map((format) => (
+              <div key={format.name} className="format-panel flex h-screen w-screen shrink-0 items-center gap-16 px-16">
+                <div className="w-1/2">
+                  <h3 className="format-name font-heading text-[clamp(2.75rem,6vw,5.5rem)] font-medium leading-[1.02]">
+                    {format.name}
+                  </h3>
+                  <p className="mt-6 max-w-md text-lg text-neutral-200">{format.description}</p>
+                </div>
+                <div className="format-image h-[70vh] w-1/2 overflow-hidden">
+                  <PhotoPlaceholder
+                    label={format.photoLabel}
+                    aspectClassName="h-full"
+                    roundedClassName=""
+                    className="h-full w-full"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile/tablet AND reduced-motion fallback — same stacked pattern used
+          everywhere else on the site (Reveal), no bespoke mobile-only mechanic. */}
+      <div className="block px-6 py-24 sm:px-10 lg:motion-safe:hidden">
+        <div className="mx-auto flex max-w-xl flex-col gap-16">
+          {FORMATS.map((format, i) => (
+            <Reveal key={format.name} delay={i * 0.1}>
+              <h3 className="font-heading text-[clamp(2.75rem,6vw,5.5rem)] font-medium leading-[1.02]">
+                {format.name}
+              </h3>
+              <p className="mt-4 text-neutral-200">{format.description}</p>
+              <PhotoPlaceholder label={format.photoLabel} roundedClassName="" className="mt-6" />
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+```
+
+- [ ] **Step 2: Verify manually**
+
+Temporarily render `<HowItWorks />` under the Hero on the homepage, run `npm run dev`.
+- At ≥1024px width with no reduced-motion preference: scroll through the section and confirm it pins, the three panels (Self-service, Marmitex, Grelhados) track horizontally with the scroll, each format name reveals via a line-mask as its panel comes into focus, no numeral (01/02/03 or similar) is rendered anywhere, and normal vertical scrolling resumes cleanly right after the third panel.
+- While scrolled into the pinned section, use Page Down/Space/arrow keys: confirm the page keeps scrolling normally (the pin must never trap keyboard scroll).
+- Resize below 1024px (or use devtools' device toolbar): confirm the pinned/horizontal markup disappears entirely and the three formats render as a plain vertical stack, each fading up via `Reveal`.
+- Enable "reduce motion" (OS setting or devtools rendering emulation) at a **desktop** width (≥1024px): confirm the section renders the same static stacked layout as mobile — never a motionless version of the horizontal layout.
+- Inspect the DOM (or use a screen reader) to confirm each panel's name and description are ordered before its photo, regardless of the left/right visual arrangement.
+
+Run: `npm run build` — expect no errors.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add src/components/HowItWorks.tsx
+git commit -m "feat: add Como Funciona editorial scroll experience for service formats"
+```
+
+---
+
+### Task 11: Cardápio (menu) section
 
 **Files:**
 - Create: `src/components/Menu.tsx`
@@ -1175,7 +1364,7 @@ git commit -m "feat: add cardapio section with category batch reveal"
 
 ---
 
-### Task 11: Gallery (Ambiente) and Practical Info sections
+### Task 12: Gallery (Ambiente) and Practical Info sections
 
 **Files:**
 - Create: `src/components/Gallery.tsx`
@@ -1325,7 +1514,7 @@ git commit -m "feat: add gallery and practical info sections"
 
 ---
 
-### Task 12: Footer
+### Task 13: Footer
 
 **Files:**
 - Create: `src/components/Footer.tsx`
@@ -1373,13 +1562,13 @@ git commit -m "feat: add footer with contact details and order CTA"
 
 ---
 
-### Task 13: Assemble the homepage
+### Task 14: Assemble the homepage
 
 **Files:**
 - Modify: `src/app/page.tsx`
 
 **Interfaces:**
-- Consumes: `Header`, `Hero`, `About`, `HowItWorks`, `Menu`, `Gallery`, `PracticalInfo`, `Footer` (all components from Tasks 7–12)
+- Consumes: `Header`, `Hero`, `About`, `HowItWorks`, `Menu`, `Gallery`, `PracticalInfo`, `Footer` (all components from Tasks 7–13)
 - Produces: the complete, navigable homepage at `/`
 
 - [ ] **Step 1: Replace the default homepage**
@@ -1428,13 +1617,13 @@ git commit -m "feat: assemble homepage from all sections"
 
 ---
 
-### Task 14: Final responsive, accessibility, and reduced-motion QA
+### Task 15: Final responsive, accessibility, and reduced-motion QA
 
 **Files:**
 - Modify: any file where an issue is found during this pass (no new files expected)
 
 **Interfaces:**
-- Consumes: the complete site from Task 13
+- Consumes: the complete site from Task 14
 - Produces: a verified, shippable MVP
 
 - [ ] **Step 1: Responsive pass**
@@ -1443,7 +1632,7 @@ Run `npm run dev`. Using browser devtools device toolbar, check the full page at
 
 - [ ] **Step 2: Reduced-motion pass**
 
-Enable "prefers-reduced-motion: reduce" (devtools rendering tab, or OS setting), reload the full page, and scroll through it. Confirm: Hero headline and signature icon appear instantly (no slide/draw), and every `Reveal`-wrapped section, the menu batch reveal, and the gallery clip reveal all show their final state immediately with no animation.
+Enable "prefers-reduced-motion: reduce" (devtools rendering tab, or OS setting), reload the full page, and scroll through it. Confirm: Hero photo, headline, and signature icon all appear instantly at final state (no fade/scale/line-mask/draw); Como Funciona renders as the static stacked layout at every width, including desktop (never a frozen horizontal layout); every other `Reveal`-wrapped section, the menu batch reveal, and the gallery clip reveal all show their final state immediately with no animation.
 
 - [ ] **Step 3: Keyboard and screen-reader-basics pass**
 
@@ -1470,6 +1659,7 @@ Confirm these are still tracked in the spec (§6, §2.4) and communicate them to
 
 ## Self-Review Notes
 
-- **Spec coverage:** §1 (context) → Task 1; §2.4/§6 hours rule → Task 3 Step 1 + Task 11 Step 2 (renders `businessHours.display` directly, never re-typed); §3 (Approach A, WhatsApp) → Tasks 3, 6, 10, 12; §4 (Design DNA) → Tasks 2, 5, 8; §5 (IA) → Tasks 7–13 (anchors match section ids exactly); §6 (content model, placeholders) → Tasks 3, 9, 10, 11; §7 (a11y/perf) → Reveal/Hero/Menu/Gallery `matchMedia` guards + Task 14; §8 (testing = manual, no unit tests) → every task's verify step; §9 (out of scope) → no CMS/form/i18n/`\`/cardapio\``/WebGL anywhere in the plan.
+- **Spec coverage:** §1 (context) → Task 1; §2.4/§6 hours rule → Task 3 Step 1 + Task 12 Step 2 (renders `businessHours.display` directly, never re-typed); §3 (Approach A, WhatsApp) → Tasks 3, 6, 11, 13; §4 (Design DNA) → Tasks 2, 5, 8, 10; §5 (IA) → Tasks 7–13 (anchors match section ids exactly); §6 (content model, placeholders) → Tasks 3, 9, 10, 11, 12; §7 (a11y/perf) → Reveal/Hero/HowItWorks/Menu/Gallery `matchMedia` guards + Task 15; §8 (testing = manual, no unit tests) → every task's verify step; §9 (out of scope) → no CMS/form/i18n/`\`/cardapio\``/WebGL anywhere in the plan (WebGL/3D exception is judgment-only, per §11.6, never scheduled as a task); §11 (21st.dev research, motion hierarchy, Hero photo layer, Como Funciona editorial scroll experience) → Tasks 5, 8, 10 — no 21st component installed or copied verbatim anywhere in this plan.
 - **Placeholder scan:** no "TBD"/"TODO"/"implement later" in any step; every code block is complete and runnable as written; content placeholders are real, working code marked with explicit `isPlaceholder`/`PhotoPlaceholder`/`{/* PLACEHOLDER */}` conventions, not vague instructions.
-- **Type consistency checked:** `SiteContent`/`BusinessHours`/`SiteAddress` (Task 3) match every consumer's destructuring in Tasks 6, 7, 8, 10, 11, 12. `MenuCategory`/`MenuItem`/`formatPriceBRL` (Task 3) match Task 10's usage exactly. `ButtonProps` (Task 4) supports the `href`+`target`+`rel` combination used by Tasks 6 and 10. Section `id`s (`hero`, `sobre`, `como-funciona`, `cardapio`, `ambiente`, `informacoes`, `contato`) are consistent between Header's `NAV_ITEMS` (Task 7) and the components that define them (Tasks 8–12). `gsap`/`ScrollTrigger`/`useGSAP` are imported from `@/lib/gsap` everywhere after Task 5, never re-imported/re-registered from the raw packages.
+- **Type consistency checked:** `SiteContent`/`BusinessHours`/`SiteAddress` (Task 3) match every consumer's destructuring in Tasks 6, 7, 8, 11, 12, 13. `MenuCategory`/`MenuItem`/`formatPriceBRL` (Task 3) match Task 11's usage exactly. `ButtonProps` (Task 4) supports the `href`+`target`+`rel` combination used by Tasks 6 and 11. `PhotoPlaceholder`'s new `roundedClassName` prop (Task 4) is used consistently by Tasks 8, 10, and 12 wherever a full-bleed/square-cornered treatment is needed. Section `id`s (`hero`, `sobre`, `como-funciona`, `cardapio`, `ambiente`, `informacoes`, `contato`) are consistent between Header's `NAV_ITEMS` (Task 7) and the components that define them (Tasks 8–13). `gsap`/`ScrollTrigger`/`SplitText`/`useGSAP` are imported from `@/lib/gsap` everywhere after Task 5, never re-imported/re-registered from the raw packages, and never mixed with Framer Motion.
+- **Motion hierarchy checked (spec §11.3):** only Task 8 (Hero) and Task 10 (Como Funciona) use scroll-scrub; Tasks 9, 11, 12, 13 (About, Menu, Gallery/PracticalInfo, Footer) use only the one-shot `Reveal`/batch-reveal pattern already established in Task 5 — no task adds a second competing "big moment."

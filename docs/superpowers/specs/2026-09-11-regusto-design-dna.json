@@ -23,7 +23,7 @@
       },
       "semantic": { "success": "#4C7A4E", "warning": "#C68A2E", "error": "#B23B2E", "info": "#3D6B8C" },
       "surface": { "background": "#FBF6EE", "card": "#FFFDF8", "elevated": "#F1E7D8" },
-      "contrast_strategy": "Dark-on-light dominante (texto quase-preto quente sobre creme), com inversão pontual (creme sobre verde-oliva #2F3B2E) em seções institucionais de destaque como 'Sobre' ou rodapé"
+      "contrast_strategy": "Dark-on-light dominante (texto quase-preto quente sobre creme), com inversão pontual (creme sobre verde-oliva #2F3B2E) em seções institucionais de destaque como 'Sobre', rodapé e, a partir de 2026-09-11, 'Como Funciona' — esta última elevada a segundo momento de destaque visual/motion do site (ver spec principal §11)"
     },
     "typography": {
       "type_scale": {
@@ -172,15 +172,15 @@
       "params": { "uniforms": "n/a", "vertex_manipulation": "n/a", "fragment_output": "n/a", "noise_type": "n/a", "distortion": "n/a" }
     },
     "scroll_effects": {
-      "parallax": { "enabled": true, "layers": "2 (imagem de fundo + conteúdo em primeiro plano)", "depth_range": "sutil, 10-20% de deslocamento relativo", "speed_curve": "linear suave atrelado ao scroll (scrub) apenas no hero" },
-      "scroll_triggered_animations": { "enabled": true, "trigger_points": "Entrada de cada seção (20% da viewport), itens de cardápio, cards de galeria", "animation_type": "fade-up", "scrub_behavior": "Dispara uma vez (não-scrubbed) na maioria dos elementos; scrub leve reservado ao parallax do hero" },
+      "parallax": { "enabled": true, "layers": "2 (imagem de fundo + conteúdo em primeiro plano) no hero; 2 (imagem + coluna de texto) por painel em 'Como Funciona'", "depth_range": "sutil, 10-20% de deslocamento relativo", "speed_curve": "linear suave atrelado ao scroll (scrub) no hero e, como exceção deliberada e única, na seção 'Como Funciona' — pinned horizontal scroll-jack em desktop/≥1024px, com fallback estático empilhado (sem scrub) em telas menores e sob prefers-reduced-motion (ver regra de hierarquia de motion, spec principal §11)" },
+      "scroll_triggered_animations": { "enabled": true, "trigger_points": "Entrada de cada seção (20% da viewport), itens de cardápio, cards de galeria", "animation_type": "fade-up", "scrub_behavior": "Dispara uma vez (não-scrubbed) na maioria dos elementos; scrub reservado ao hero e à seção 'Como Funciona' (exceção única e deliberada — nenhuma outra seção usa scrub, para não competir com o grande momento de motion do site)" },
       "scroll_morphing": { "enabled": false, "description": "Não se aplica ao tom do projeto — morphing de scroll seria um efeito chamativo demais para a identidade caseira" }
     },
     "text_effects": {
       "type": "fade-up",
-      "description": "Headline do hero revela por palavra ao carregar a página; demais textos usam apenas fade-up simples de bloco",
-      "technology": "GSAP (SplitText ou fallback CSS por spans pré-quebrados)",
-      "params": { "split_strategy": "by-word", "animation_per_unit": "fade + translateY(12px) sutil", "stagger": "40ms", "effect_style": "editorial, discreto" }
+      "description": "Headline do hero revela por palavra ao carregar a página; nomes de formato (self-service/marmitex/grelhados) revelam em máscara de linha na entrada de cada painel de 'Como Funciona', na mesma escala tipográfica 'display' do hero; demais textos usam apenas fade-up simples de bloco",
+      "technology": "GSAP SplitText (plugin nativo do pacote gsap, sem custo adicional desde a mudança de licenciamento da GreenSock/Webflow) — usar diretamente, sem manter o fallback manual de spans pré-quebrados como caminho principal",
+      "params": { "split_strategy": "by-word (hero) / by-line (nomes de formato)", "animation_per_unit": "fade + translateY(12px) sutil no corpo; máscara de linha (yPercent 100→0) nos elementos display", "stagger": "40ms", "effect_style": "editorial, discreto" }
     },
     "cursor_effects": {
       "enabled": false,
@@ -212,6 +212,6 @@
       "description": "Ícone-assinatura de linha (ex: talher/folha) desenha-se uma vez no carregamento do hero, via stroke-dashoffset",
       "params": { "animation_method": "stroke-dashoffset", "path_morphing": false, "stroke_animation": "draw-on único, 900ms, ease-out", "filter_effects": "none" }
     },
-    "composite_notes": "Intensidade de efeito deliberadamente contida: a sofisticação vem de tipografia, fotografia e ritmo, não de efeitos visuais chamativos. WebGL/3D/partículas/shaders foram considerados e descartados por não servirem à identidade caseira e pelo risco de performance em conexões móveis mais lentas (público local de bairro, muitos em 4G). Todo movimento passa por gsap.matchMedia() respeitando prefers-reduced-motion."
+    "composite_notes": "Intensidade de efeito deliberadamente contida: a sofisticação vem de tipografia, fotografia e ritmo, não de efeitos visuais chamativos. WebGL/3D/partículas/shaders foram considerados e descartados por não servirem à identidade caseira e pelo risco de performance em conexões móveis mais lentas (público local de bairro, muitos em 4G); seguem fora de escopo, a menos que surja durante a implementação uma aplicação excepcional e claramente melhor para a Regusto — não deve ser forçado. Todo movimento passa por gsap.matchMedia() respeitando prefers-reduced-motion, sem exceção — incluindo a seção 'Como Funciona' (ver abaixo). Em 2026-09-11, após rodada de pesquisa visual curada no 21st.dev (hero editorial fotográfico, storytelling de scroll, estrutura não-card para formatos de atendimento), o site ganhou um único ponto de exceção à regra de 'scrub só no hero': a seção 'Como Funciona' (self-service/marmitex/grelhados) passa a ser o grande momento interativo do site, com pinned horizontal scroll-jack próprio em desktop. Nenhum componente do 21st foi instalado — as referências serviram só de inspiração estrutural, reconstruída inteiramente com os tokens deste documento (cor, tipografia, easing, paleta de movimento) para que o resultado leia como autoral da Regusto. Hierarquia de motion resultante: Hero (impacto) > Como Funciona (grande momento, único outro scrub) > Sobre/Ambiente (storytelling sutil, sem scrub) > Cardápio (clareza/conversão) > Contato (ação) — ver spec principal §11 para a regra completa."
   }
 }
